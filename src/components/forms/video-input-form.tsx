@@ -43,20 +43,35 @@ export function VideoInputForm(props: VideoInputFormProps) {
         console.log('Convert started.');
 
         const ffmpeg = await getFFmpeg();
+        console.log('file: ', video);
 
-        await ffmpeg.writeFile('input.mp4', await fetchFile(video));
+        if (video.type != 'audio/mpeg') {
+            await ffmpeg.writeFile('input.mp4', await fetchFile(video));
 
-        // ffmpeg.on('log', (log) => {
-        //     console.log(log)
-        // })
+            ffmpeg.on('log', (log) => {
+                console.log(log)
+            })
 
-        ffmpeg.on('progress', (progress) => {
-            console.log('Convert progress: ' + Math.round(progress.progress * 100))
-        });
+            ffmpeg.on('progress', (progress) => {
+                console.log('Convert progress: ' + Math.round(progress.progress * 100))
+            });
 
-        await ffmpeg.exec([
-            '-i', 'input.mp4', '-map', '0:a', '-b:a', '20k', '-acodec', 'libmp3lame', 'output.mp3'
-        ]);
+            await ffmpeg.exec([
+                '-i', 'input.mp4', '-map', '0:a', '-b:a', '20k', '-acodec', 'libmp3lame', 'output.mp3'
+            ]);
+
+
+        } else {
+            await ffmpeg.writeFile('input.mp3', await fetchFile(video));
+
+            ffmpeg.on('progress', (progress) => {
+                console.log('Convert progress: ' + Math.round(progress.progress * 100))
+            });
+
+            await ffmpeg.exec([
+                '-i', 'input.mp3', '-b:a', '20k', '-acodec', 'libmp3lame', 'output.mp3'
+            ]);
+        }
 
         const data = await ffmpeg.readFile('output.mp3');
 
@@ -129,7 +144,7 @@ export function VideoInputForm(props: VideoInputFormProps) {
                         </>
                     )}
             </label>
-            <input type="file" id='video' accept='video/mp4' className='sr-only' onChange={handleFileSelected} />
+            <input type="file" id='video' accept='video/mp4,audio/mp3' className='sr-only' onChange={handleFileSelected} />
 
             <Separator />
 
